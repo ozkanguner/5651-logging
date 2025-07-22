@@ -179,21 +179,21 @@ class DynamicLogParser:
         try:
             cursor = conn.cursor()
             cursor.execute("""
-                INSERT INTO users (mac_address, ip_address, hotspot_id, first_connection, last_connection, connection_count)
-                VALUES (%s, %s, %s, %s, %s, 1)
+                INSERT INTO users (mac_address, hotspot_id, first_seen, last_seen, total_connections)
+                VALUES (%s, %s, %s, %s, 1)
                 ON CONFLICT (mac_address) DO UPDATE SET
-                    ip_address = EXCLUDED.ip_address,
                     hotspot_id = EXCLUDED.hotspot_id,
-                    last_connection = EXCLUDED.last_connection,
-                    connection_count = users.connection_count + 1
+                    last_seen = EXCLUDED.last_seen,
+                    total_connections = users.total_connections + 1,
+                    updated_at = NOW()
             """, (
                 log_data['src_mac'],
-                log_data['src_ip'],
                 hotspot_id,
                 log_data['timestamp'],
                 log_data['timestamp']
             ))
             conn.commit()
+            self.logger.info(f"Kullanıcı güncellendi/eklendi: {log_data['src_mac']} - Hotspot: {hotspot_id}")
             return True
         except Exception as e:
             self.logger.error(f"Kullanıcı kaydetme hatası: {e}")
