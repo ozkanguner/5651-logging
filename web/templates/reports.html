@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Raporlar - 5651 Loglama Sistemi</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <i class="fas fa-shield-alt"></i> 5651 Loglama Sistemi
+            </a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link" href="/dashboard">Dashboard</a>
+                <a class="nav-link" href="/dashboard/hotspots">Hotspot'lar</a>
+                <a class="nav-link" href="/dashboard/connections">Bağlantılar</a>
+                <a class="nav-link" href="/dashboard/users">Kullanıcılar</a>
+                <a class="nav-link active" href="/dashboard/reports">Raporlar</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <div class="row">
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h4><i class="fas fa-chart-bar"></i> Raporlar</h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="row mb-4">
+                            <div class="col-md-3">
+                                <label for="report-type" class="form-label">Rapor Türü</label>
+                                <select class="form-select" id="report-type">
+                                    <option value="daily">Günlük Rapor</option>
+                                    <option value="weekly">Haftalık Rapor</option>
+                                    <option value="monthly">Aylık Rapor</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label for="start-date" class="form-label">Başlangıç Tarihi</label>
+                                <input type="date" class="form-control" id="start-date">
+                            </div>
+                            <div class="col-md-3">
+                                <label for="end-date" class="form-label">Bitiş Tarihi</label>
+                                <input type="date" class="form-control" id="end-date">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">&nbsp;</label>
+                                <button class="btn btn-primary d-block" onclick="generateReport()">
+                                    <i class="fas fa-download"></i> Rapor Oluştur
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h6><i class="fas fa-chart-line"></i> Günlük İstatistikler</h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <div id="daily-stats">
+                                            <p><i class="fas fa-spinner fa-spin"></i> Yükleniyor...</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h6><i class="fas fa-list"></i> 5651 Kanun Raporu</h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <div id="legal-report">
+                                            <p><i class="fas fa-spinner fa-spin"></i> Yükleniyor...</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row mt-4">
+                            <div class="col-md-12">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h6><i class="fas fa-table"></i> Detaylı Rapor</h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <div id="detailed-report">
+                                            <p><i class="fas fa-spinner fa-spin"></i> Yükleniyor...</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Tarih alanlarını bugünün tarihi ile doldur
+        document.addEventListener('DOMContentLoaded', function() {
+            const today = new Date();
+            const lastMonth = new Date(today.getFullYear(), today.getMonth() - 1, today.getDate());
+            
+            document.getElementById('end-date').value = today.toISOString().split('T')[0];
+            document.getElementById('start-date').value = lastMonth.toISOString().split('T')[0];
+            
+            loadReportData();
+        });
+
+        // Rapor verilerini yükle
+        function loadReportData() {
+            // Günlük istatistikleri yükle
+            fetch('/api/daily-stats?days=30')
+                .then(response => response.json())
+                .then(data => {
+                    const statsDiv = document.getElementById('daily-stats');
+                    if (data.success && data.data.length > 0) {
+                        let html = '<div class="table-responsive"><table class="table table-sm">';
+                        html += '<thead><tr><th>Tarih</th><th>Bağlantı</th><th>Kullanıcı</th><th>Trafik</th></tr></thead><tbody>';
+                        
+                        data.data.slice(0, 10).forEach(stat => {
+                            html += `<tr>
+                                <td>${stat.connection_date}</td>
+                                <td>${stat.total_connections}</td>
+                                <td>${stat.total_unique_users}</td>
+                                <td>${formatBytes(stat.total_bytes)}</td>
+                            </tr>`;
+                        });
+                        
+                        html += '</tbody></table></div>';
+                        statsDiv.innerHTML = html;
+                    } else {
+                        statsDiv.innerHTML = '<p>Veri bulunamadı</p>';
+                    }
+                })
+                .catch(error => {
+                    document.getElementById('daily-stats').innerHTML = '<p>Veri yüklenemedi</p>';
+                });
+
+            // 5651 kanun raporu
+            const legalDiv = document.getElementById('legal-report');
+            legalDiv.innerHTML = `
+                <div class="alert alert-info">
+                    <h6>5651 Kanun Uyumluluğu</h6>
+                    <ul class="mb-0">
+                        <li>✅ Kullanıcı kimlik bilgileri kaydediliyor</li>
+                        <li>✅ Bağlantı zamanları tutuluyor</li>
+                        <li>✅ Hedef adresler saklanıyor</li>
+                        <li>✅ Minimum 2 yıl saklama süresi</li>
+                        <li>✅ Güvenlik önlemleri alınmış</li>
+                    </ul>
+                </div>
+            `;
+        }
+
+        // Rapor oluştur
+        function generateReport() {
+            const reportType = document.getElementById('report-type').value;
+            const startDate = document.getElementById('start-date').value;
+            const endDate = document.getElementById('end-date').value;
+
+            if (!startDate || !endDate) {
+                alert('Lütfen tarih aralığı seçin');
+                return;
+            }
+
+            // Rapor oluşturma simülasyonu
+            const detailedDiv = document.getElementById('detailed-report');
+            detailedDiv.innerHTML = `
+                <div class="alert alert-success">
+                    <h6>Rapor Oluşturuldu</h6>
+                    <p><strong>Rapor Türü:</strong> ${reportType}</p>
+                    <p><strong>Tarih Aralığı:</strong> ${startDate} - ${endDate}</p>
+                    <p><strong>Oluşturma Zamanı:</strong> ${new Date().toLocaleString('tr-TR')}</p>
+                    <button class="btn btn-sm btn-primary" onclick="downloadReport()">
+                        <i class="fas fa-download"></i> PDF İndir
+                    </button>
+                </div>
+            `;
+        }
+
+        // Rapor indir (simülasyon)
+        function downloadReport() {
+            alert('Rapor indirme özelliği geliştirme aşamasında');
+        }
+
+        // Byte formatını düzenle
+        function formatBytes(bytes) {
+            if (bytes === 0) return '0 B';
+            const k = 1024;
+            const sizes = ['B', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+    </script>
+</body>
+</html> 

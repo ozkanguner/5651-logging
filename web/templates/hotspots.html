@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hotspot'lar - 5651 Loglama Sistemi</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <i class="fas fa-shield-alt"></i> 5651 Loglama Sistemi
+            </a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link" href="/dashboard">Dashboard</a>
+                <a class="nav-link active" href="/dashboard/hotspots">Hotspot'lar</a>
+                <a class="nav-link" href="/dashboard/connections">Bağlantılar</a>
+                <a class="nav-link" href="/dashboard/users">Kullanıcılar</a>
+                <a class="nav-link" href="/dashboard/reports">Raporlar</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <div class="row">
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h4><i class="fas fa-wifi"></i> Hotspot'lar</h4>
+                        <button class="btn btn-primary btn-sm" onclick="refreshHotspots()">
+                            <i class="fas fa-sync-alt"></i> Yenile
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <div id="hotspots-list">
+                            <p><i class="fas fa-spinner fa-spin"></i> Yükleniyor...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Hotspot'ları yükle
+        function loadHotspots() {
+            fetch('/api/hotspots')
+                .then(response => response.json())
+                .then(data => {
+                    const hotspotsDiv = document.getElementById('hotspots-list');
+                    if (data.success && data.data.length > 0) {
+                        let html = '<div class="table-responsive"><table class="table table-striped">';
+                        html += '<thead><tr><th>ID</th><th>Ad</th><th>Konum</th><th>IP Aralığı</th><th>Durum</th><th>Oluşturulma</th><th>İşlemler</th></tr></thead><tbody>';
+                        
+                        data.data.forEach(hotspot => {
+                            const statusBadge = hotspot.status === 'active' 
+                                ? '<span class="badge bg-success">Aktif</span>'
+                                : '<span class="badge bg-secondary">Pasif</span>';
+                            
+                            html += `<tr>
+                                <td>${hotspot.id}</td>
+                                <td><strong>${hotspot.name}</strong></td>
+                                <td>${hotspot.location || '-'}</td>
+                                <td><code>${hotspot.ip_range || '-'}</code></td>
+                                <td>${statusBadge}</td>
+                                <td>${new Date(hotspot.created_at).toLocaleDateString('tr-TR')}</td>
+                                <td>
+                                    <button class="btn btn-sm btn-info" onclick="viewHotspot(${hotspot.id})">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-warning" onclick="editHotspot(${hotspot.id})">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                </td>
+                            </tr>`;
+                        });
+                        
+                        html += '</tbody></table></div>';
+                        hotspotsDiv.innerHTML = html;
+                    } else {
+                        hotspotsDiv.innerHTML = '<div class="alert alert-info">Henüz hotspot bulunmuyor</div>';
+                    }
+                })
+                .catch(error => {
+                    document.getElementById('hotspots-list').innerHTML = '<div class="alert alert-danger">Veri yüklenemedi</div>';
+                });
+        }
+
+        // Hotspot'ları yenile
+        function refreshHotspots() {
+            loadHotspots();
+        }
+
+        // Hotspot detayını görüntüle
+        function viewHotspot(id) {
+            alert(`Hotspot ID ${id} detayları görüntüleniyor...`);
+        }
+
+        // Hotspot düzenle
+        function editHotspot(id) {
+            alert(`Hotspot ID ${id} düzenleniyor...`);
+        }
+
+        // Sayfa yüklendiğinde hotspot'ları yükle
+        document.addEventListener('DOMContentLoaded', loadHotspots);
+    </script>
+</body>
+</html> 
