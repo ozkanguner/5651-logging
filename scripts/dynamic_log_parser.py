@@ -136,37 +136,46 @@ class DynamicLogParser:
             conn.rollback()
             return False
     
-    def parse_log_line(self, line: str, hotspot_name: str) -> Optional[Dict]:
-        """Log satırını parse et"""
-        # 5651 log formatı: Jul 22 01:37:54 hotspot-name srcnat: in:INTERFACE out:INTERFACE, connection-state:new src-mac MAC, proto PROTOCOL, IP:PORT->IP:PORT, len SIZE
-        pattern = r'(\w{3}\s+\d{1,2}\s+\d{2}:\d{2}:\d{2})\s+([^\s]+)\s+srcnat:\s+in:([^\s]+)\s+out:([^,]+),?\s+connection-state:([^\s,]+),?\s+src-mac\s+([^\s,]+),?\s+proto\s+([^,]+),?\s+([^,]+),?\s+len\s+(\d+)'
-        
+    def parse_log_line(self, line: str, hotspot_name: str = None) -> Optional[Dict]:
+        # Satırı boşluklara göre ayır
+        parts = line.split()
+        if len(parts) < 3:
+            return None
+        hostname = parts[1]
+        # Mapping ile düzelt (case-insensitive)
+        mapping = {
+            "sisli_hotspot": "SISLI_HOTSPOT",
+            "aksaray-hotspot.trasst.com": "aksaray-hotspot.trasst.com",
+            "trasst.maslak-hotspot": "trasst.maslak-hotspot",
+            "sultanahmet-hotspot.trasst.com": "sultanahmet-hotspot.trasst.com",
+            "log1": "log1"
+        }
+        hostname_key = hostname.lower()
+        real_hotspot = mapping.get(hostname_key, hostname)
+        # 5651 log formatı: Jul 22 01:37:54 hostname ...
+        pattern = r'(\w{3}\s+\d{1,2}\s+\d{2}:\d{2}:\d{2})\s+[^\s]+\s+srcnat:\s+in:([^\s]+)\s+out:([^,]+),?\s+connection-state:([^\s,]+),?\s+src-mac\s+([^\s,]+),?\s+proto\s+([^,]+),?\s+([^,]+),?\s+len\s+(\d+)'
         match = re.match(pattern, line)
         if not match:
             return None
-        
         try:
-            # IP adreslerini çıkar
-            ip_info = match.group(8)
+            ip_info = match.group(7)
             ip_pattern = r'(\d+\.\d+\.\d+\.\d+):(\d+)->(\d+\.\d+\.\d+\.\d+):(\d+)'
             ip_match = re.search(ip_pattern, ip_info)
-            
             if not ip_match:
                 return None
-            
             return {
                 'timestamp': datetime.strptime(f"{datetime.now().year} {match.group(1)}", "%Y %b %d %H:%M:%S"),
-                'hotspot_name': hotspot_name,
-                'in_interface': match.group(3),
-                'out_interface': match.group(4),
-                'connection_state': match.group(5),
-                'src_mac': match.group(6),
-                'protocol': match.group(7),
+                'hotspot_name': real_hotspot,
+                'in_interface': match.group(2),
+                'out_interface': match.group(3),
+                'connection_state': match.group(4),
+                'src_mac': match.group(5),
+                'protocol': match.group(6),
                 'src_ip': ip_match.group(1),
                 'src_port': ip_match.group(2),
                 'dst_ip': ip_match.group(3),
                 'dst_port': ip_match.group(4),
-                'packet_size': int(match.group(9))
+                'packet_size': int(match.group(8))
             }
         except Exception as e:
             self.logger.error(f"Log parse hatası: {e} - Line: {line}")
@@ -209,8 +218,8 @@ class DynamicLogParser:
         try:
             cursor = conn.cursor()
             
-            # Hotspot ID'sini al
-            cursor.execute("SELECT id FROM hotspots WHERE name = %s", (log_data['hotspot_name'],))
+            # Hotspot ID'sini case-insensitive al
+            cursor.execute("SELECT id FROM hotspots WHERE LOWER(name) = %s", (log_data['hotspot_name'].lower(),))
             result = cursor.fetchone()
             if not result:
                 self.logger.error(f"Hotspot bulunamadı: {log_data['hotspot_name']}")

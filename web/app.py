@@ -294,34 +294,55 @@ def protocol_distribution():
     data = [{"protocol": r[0], "count": r[1]} for r in rows]
     return jsonify({"success": True, "data": data})
 
-@app.route('/api/connections', methods=['GET'])
-@limiter.limit("200 per hour")
-def get_connections():
-    """Bağlantı kayıtlarını getir"""
-    try:
-        hotspot_id = request.args.get('hotspot_id', type=int)
-        limit = request.args.get('limit', 100, type=int)
-        start_date = request.args.get('start_date')
-        end_date = request.args.get('end_date')
-        
-        connections = api.get_connections(
-            hotspot_id=hotspot_id,
-            limit=limit,
-            start_date=start_date,
-            end_date=end_date
-        )
-        
-        return jsonify({
-            'success': True,
-            'data': connections,
-            'count': len(connections)
-        })
-    except Exception as e:
-        logger.error(f"Bağlantı kayıtları hatası: {e}")
-        return jsonify({
-            'success': False,
-            'error': str(e)
-        }), 500
+@app.route('/api/connections')
+def api_connections():
+    conn = get_db_connection()
+    cur = conn.cursor()
+    limit = int(request.args.get('limit', 10))
+    cur.execute("""
+        SELECT id, hotspot_id, src_ip, src_mac, protocol, timestamp
+        FROM connections
+        ORDER BY timestamp DESC
+        LIMIT %s
+    """, (limit,))
+    rows = cur.fetchall()
+    data = [
+        {
+            "id": r[0],
+            "hotspot_id": r[1],
+            "src_ip": r[2],
+            "src_mac": r[3],
+            "protocol": r[4],
+            "timestamp": r[5].isoformat() if r[5] else None
+        }
+        for r in rows
+    ]
+    return jsonify({"success": True, "count": len(data), "data": data})
+
+@app.route('/api/users')
+def api_users():
+    conn = get_db_connection()
+    cur = conn.cursor()
+    limit = int(request.args.get('limit', 10))
+    cur.execute("""
+        SELECT id, mac_address, hotspot_id, first_seen, last_seen, total_connections
+        FROM users
+        ORDER BY last_seen DESC
+        LIMIT %s
+    """, (limit,))
+    rows = cur.fetchall()
+    data = [
+        {
+            "id": r[0],
+            "mac_address": r[1],
+            "hotspot_id": r[2],
+            "first_seen": r[3].isoformat() if r[3] else None,
+            "last_seen": r[4].isoformat() if r[4] else None,
+            "total_connections": r[5]
+        }
+        for r in rows
+    ]
+    return jsonify({"success": True, "count": len(data), "data": data})
 
 @app.route('/api/daily-stats', methods=['GET'])
 @limiter.limit("100 per hour")
