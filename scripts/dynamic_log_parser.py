@@ -172,6 +172,34 @@ class DynamicLogParser:
             self.logger.error(f"Log parse hatası: {e} - Line: {line}")
             return None
     
+    def save_user_to_database(self, log_data, hotspot_id):
+        conn = self.get_db_connection()
+        if not conn:
+            return False
+        try:
+            cursor = conn.cursor()
+            cursor.execute("""
+                INSERT INTO users (mac_address, ip_address, hotspot_id, first_connection, last_connection, connection_count)
+                VALUES (%s, %s, %s, %s, %s, 1)
+                ON CONFLICT (mac_address) DO UPDATE SET
+                    ip_address = EXCLUDED.ip_address,
+                    hotspot_id = EXCLUDED.hotspot_id,
+                    last_connection = EXCLUDED.last_connection,
+                    connection_count = users.connection_count + 1
+            """, (
+                log_data['src_mac'],
+                log_data['src_ip'],
+                hotspot_id,
+                log_data['timestamp'],
+                log_data['timestamp']
+            ))
+            conn.commit()
+            return True
+        except Exception as e:
+            self.logger.error(f"Kullanıcı kaydetme hatası: {e}")
+            conn.rollback()
+            return False
+
     def save_connection_to_db(self, log_data: Dict):
         """Bağlantı verisini veritabanına kaydet"""
         conn = self.get_db_connection()
@@ -189,6 +217,9 @@ class DynamicLogParser:
                 return False
             
             hotspot_id = result[0]
+            
+            # Kullanıcıyı kaydet/güncelle
+            self.save_user_to_database(log_data, hotspot_id)
             
             # Bağlantıyı kaydet
             cursor.execute("""

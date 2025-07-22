@@ -132,7 +132,7 @@
                                 <div class="d-flex justify-content-between align-items-center mb-2">
                                     <div>
                                         <small class="text-muted">${new Date(conn.timestamp).toLocaleString('tr-TR')}</small><br>
-                                        <strong>${conn.src_ip}</strong> → <strong>${conn.dst_ip}</strong>
+                                        <strong>${conn.src_ip}</strong> → <strong>${conn.dst_ip}</strong> <span class="text-muted">(${conn.src_mac})</span>
                                     </div>
                                     <span class="badge bg-secondary">${conn.protocol}</span>
                                 </div>
@@ -145,6 +145,29 @@
                 })
                 .catch(error => {
                     document.getElementById('recent-activities').innerHTML = '<p>Veri yüklenemedi</p>';
+                });
+
+            // Protokol dağılımı yükle
+            fetch('/api/protocol-distribution')
+                .then(response => response.json())
+                .then(data => {
+                    const chartDiv = document.getElementById('protocol-chart');
+                    if (data.success && data.data.length > 0) {
+                        let html = '<ul class="list-group">';
+                        data.data.forEach(item => {
+                            html += `<li class="list-group-item d-flex justify-content-between align-items-center">
+                                <span>${item.protocol}</span>
+                                <span class="badge bg-primary">${item.count}</span>
+                            </li>`;
+                        });
+                        html += '</ul>';
+                        chartDiv.innerHTML = html;
+                    } else {
+                        chartDiv.innerHTML = '<p>Protokol verisi yok</p>';
+                    }
+                })
+                .catch(error => {
+                    document.getElementById('protocol-chart').innerHTML = '<p>Veri yüklenemedi</p>';
                 });
         }
 

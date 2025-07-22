@@ -100,10 +100,10 @@
                                 <td>${user.id}</td>
                                 <td><code>${user.mac_address}</code></td>
                                 <td><code>${user.ip_address}</code></td>
-                                <td><strong>${user.hotspot_name}</strong></td>
-                                <td>${new Date(user.first_connection).toLocaleString('tr-TR')}</td>
-                                <td>${new Date(user.last_connection).toLocaleString('tr-TR')}</td>
-                                <td><span class="badge bg-info">${user.connection_count}</span></td>
+                                <td><strong>${user.hotspot_name || '-'}</strong></td>
+                                <td>${user.first_connection ? new Date(user.first_connection).toLocaleString('tr-TR') : '-'}</td>
+                                <td>${user.last_connection ? new Date(user.last_connection).toLocaleString('tr-TR') : '-'}</td>
+                                <td><span class="badge bg-info">${user.connection_count || 0}</span></td>
                                 <td>${statusBadge}</td>
                                 <td>
                                     <button class="btn btn-sm btn-info" onclick="viewUser(${user.id})">

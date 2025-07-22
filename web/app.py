@@ -259,24 +259,40 @@ def get_hotspot(hotspot_id):
             'error': str(e)
         }), 500
 
-@app.route('/api/statistics', methods=['GET'])
-@limiter.limit("100 per hour")
-def get_statistics():
-    """İstatistikleri getir"""
-    try:
-        hotspot_id = request.args.get('hotspot_id', type=int)
-        stats = api.get_hotspot_statistics(hotspot_id)
-        
-        return jsonify({
-            'success': True,
-            'data': stats
-        })
-    except Exception as e:
-        logger.error(f"İstatistik hatası: {e}")
-        return jsonify({
-            'success': False,
-            'error': str(e)
-        }), 500
+@app.route('/api/statistics')
+def api_statistics():
+    conn = get_db_connection()
+    cur = conn.cursor()
+    # Toplam hotspot sayısı
+    cur.execute("SELECT COUNT(*) FROM hotspots;")
+    hotspot_count = cur.fetchone()[0]
+    # Toplam kullanıcı (benzersiz MAC)
+    cur.execute("SELECT COUNT(DISTINCT mac_address) FROM users;")
+    unique_users = cur.fetchone()[0]
+    # Toplam bağlantı
+    cur.execute("SELECT COUNT(*) FROM connections;")
+    total_connections = cur.fetchone()[0]
+    # Toplam trafik (byte)
+    cur.execute("SELECT SUM(packet_size) FROM connections;")
+    total_bytes = cur.fetchone()[0] or 0
+    return jsonify({
+        "success": True,
+        "data": [{
+            "hotspot_count": hotspot_count,
+            "unique_users": unique_users,
+            "total_connections": total_connections,
+            "total_bytes": total_bytes
+        }]
+    })
+
+@app.route('/api/protocol-distribution')
+def protocol_distribution():
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute("SELECT protocol, COUNT(*) FROM connections GROUP BY protocol;")
+    rows = cur.fetchall()
+    data = [{"protocol": r[0], "count": r[1]} for r in rows]
+    return jsonify({"success": True, "data": data})
 
 @app.route('/api/connections', methods=['GET'])
 @limiter.limit("200 per hour")
