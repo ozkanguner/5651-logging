@@ -1,0 +1,56 @@
+# 5651 Loglama Sistemi Python Bağımlılıkları
+
+# Web Framework
+Flask==2.3.3
+Flask-CORS==4.0.0
+Flask-Limiter==3.5.0
+
+# Veritabanı
+psycopg2-binary==2.9.7
+redis==5.0.1
+
+# Elasticsearch
+elasticsearch==8.8.0
+
+# Veri İşleme
+pandas==2.0.3
+numpy==1.24.3
+
+# Logging ve Monitoring
+structlog==23.1.0
+prometheus-client==0.17.1
+
+# HTTP Requests
+requests==2.31.0
+
+# Date/Time
+python-dateutil==2.8.2
+pytz==2023.3
+
+# Konfigürasyon
+python-dotenv==1.0.0
+PyYAML==6.0.1
+
+# Güvenlik
+cryptography==41.0.3
+bcrypt==4.0.1
+
+# JSON ve Serialization
+ujson==5.8.0
+
+# Async Support
+aiohttp==3.8.5
+asyncio==3.4.3
+
+# Testing
+pytest==7.4.0
+pytest-cov==4.1.0
+
+# Development Tools
+black==23.7.0
+flake8==6.0.0
+mypy==1.5.1
+
+# Documentation
+Sphinx==7.1.2
+sphinx-rtd-theme==1.3.0 
