@@ -1,0 +1,38 @@
+{
+    "log_directories": [
+        "/var/log/remote"
+    ],
+    "log_patterns": [
+        "*/**/*.log"
+    ],
+    "hotspot_mapping": {
+        "aksaray-hotspot.trasst.com": "Aksaray Hotspot",
+        "log1": "Log1 Hotspot", 
+        "SISLI_HOTSPOT": "Sisli Hotspot",
+        "sultanahmet-hotspot.trasst.com": "Sultanahmet Hotspot",
+        "trasst.maslak-hotspot": "Maslak Hotspot"
+    },
+    "database": {
+        "host": "localhost",
+        "port": 5432,
+        "name": "loglama_db",
+        "user": "loglama_user",
+        "password": "Zkngnr81."
+    },
+    "elasticsearch": {
+        "host": "localhost",
+        "port": 9200,
+        "index": "5651-logs"
+    },
+    "redis": {
+        "host": "localhost",
+        "port": 6379,
+        "db": 0
+    },
+    "processing": {
+        "batch_size": 100,
+        "interval": 30,
+        "max_workers": 4,
+        "recursive": true
+    }
+} 
